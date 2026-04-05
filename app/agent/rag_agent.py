@@ -19,30 +19,28 @@ from app.rag.retriever import Retriever
 logger = get_logger(__name__)
 
 
-# Enhanced system prompt that guides the agent on when to use RAG
-RAG_AGENT_SYSTEM_PROMPT = """You are a helpful AI assistant with access to a knowledge base of documents.
+# RAG-specific instructions appended to the main system prompt
+RAG_TOOL_INSTRUCTIONS = """
 
-IMPORTANT GUIDELINES:
+# Knowledge Base Access
+You have access to a knowledge base of documents. Use it wisely:
 
 1. **Use the search_knowledge_base tool** when:
-   - User asks about company policies, procedures, or internal information
-   - User references specific documents or manuals
-   - User asks questions like "What does our policy say about..." or "According to the guidelines..."
-   - You need accurate, up-to-date information that may be in the documents
-   - User asks about products, services, or company-specific details
+   - User asks about specific notifications, circulars, or amendments
+   - User references ICAI guidance notes, SEBI circulars, or MCA notifications
+   - User asks about client-specific documents or internal records
+   - You need to verify the latest provisions or recent changes
+   - User asks "What does the document say about..." or references uploaded files
 
 2. **Answer directly WITHOUT using tools** when:
-   - User asks general knowledge questions (math, history, science)
-   - User is having casual conversation ("Hello", "How are you?")
-   - User asks for creative help (writing, brainstorming)
-   - User asks something you can confidently answer from your training
+   - User asks about well-established provisions of GST Act, Companies Act, or Ind AS
+   - User asks general questions about accounting principles or audit procedures
+   - The query is about fundamental concepts you can answer from your expertise
 
 3. **When you use the knowledge base**:
-   - Cite the source document in your response
-   - If no relevant documents are found, say so clearly
-   - Don't make up information that isn't in the documents
-
-4. **Be helpful and conversational** while being accurate and grounded in the documents when needed.
+   - Cite the source document with its name/reference in your response
+   - If no relevant documents are found, state this clearly and provide your analysis based on general provisions
+   - Cross-reference document findings with applicable standards and laws
 """
 
 
@@ -90,10 +88,10 @@ class RAGAgent(Agent):
         
         # Create conversation manager with RAG-aware system prompt
         if conversation_manager is None:
-            system_prompt = RAG_AGENT_SYSTEM_PROMPT
-            if custom_system_prompt:
-                system_prompt = f"{custom_system_prompt}\n\n{RAG_AGENT_SYSTEM_PROMPT}"
-            
+            from app.core.prompts import ACCOUNTANT_SYSTEM_PROMPT
+            base_prompt = custom_system_prompt or ACCOUNTANT_SYSTEM_PROMPT
+            system_prompt = f"{base_prompt}\n{RAG_TOOL_INSTRUCTIONS}"
+
             conversation_manager = ConversationManager(
                 default_system_prompt=system_prompt
             )
@@ -132,9 +130,9 @@ class RAGAgent(Agent):
         Returns:
             AgentResponse with the result
         """
-        # Combine custom system prompt with RAG prompt if provided
+        # Combine custom system prompt with RAG instructions if provided
         if system_prompt:
-            system_prompt = f"{system_prompt}\n\n{RAG_AGENT_SYSTEM_PROMPT}"
+            system_prompt = f"{system_prompt}\n{RAG_TOOL_INSTRUCTIONS}"
         
         return await super().chat(
             message=message,

@@ -80,14 +80,18 @@ class Conversation:
 
 class ConversationManager:
     """Manages multiple conversations."""
-    
+
     def __init__(self, default_system_prompt: Optional[str] = None) -> None:
         """
         Initialize the conversation manager.
-        
+
         Args:
-            default_system_prompt: Default system prompt for new conversations
+            default_system_prompt: Default system prompt for new conversations.
+                                   If None, uses the accountant prompt from config.
         """
+        if default_system_prompt is None:
+            from app.core.prompts import ACCOUNTANT_SYSTEM_PROMPT
+            default_system_prompt = ACCOUNTANT_SYSTEM_PROMPT
         self._conversations: dict[str, Conversation] = {}
         self.default_system_prompt = default_system_prompt
     

@@ -90,10 +90,8 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = Field(default=50, ge=1)
     allowed_extensions: str = Field(default=".pdf,.txt,.docx,.md")
     
-    # System Prompt
-    default_system_prompt: str = Field(
-        default="You are a helpful AI assistant specialized in accounting and financial matters."
-    )
+    # System Prompt (loaded from prompts.py)
+    default_system_prompt: str = Field(default="")
     
     # Agent Configuration
     agent_max_iterations: int = Field(default=10, ge=1)

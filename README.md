@@ -1,17 +1,22 @@
-# Accountant Chatbot Backend
+# CA Assistant - Expert Chartered Accountant Chatbot
 
-A production-ready agentic chatbot with LLM integration, RAG capabilities, and extensible architecture.
+An AI-powered Chartered Accountant assistant specialized in Indian accounting, taxation, and compliance. Built for practising CAs and accounting professionals.
+
+## Expertise Areas
+
+- **GST & Indirect Taxation**: CGST Act 2017, GSTR filings, ITC provisions
+- **Companies Act 2013**: ROC/MCA compliance, forms, filings
+- **Audit & Assurance**: Statutory audit, tax audit (44AB), Standards on Auditing (SAs)
+- **Indian Accounting Standards**: Ind AS, AS, ICAI guidance notes
 
 ## Features
 
 - **Multi-LLM Support**: OpenAI (GPT-4) and Anthropic (Claude)
-- **Agentic Capabilities**: Tool calling with iterative reasoning
-- **RAG Pipeline**: Document ingestion, chunking, and retrieval-augmented generation
-- **Qdrant Vector Database**: High-performance vector search with persistent storage
-- **Conversation Management**: Persistent conversations with custom system prompts
-- **Extensible Architecture**: Easy to add new LLM providers, tools, and document loaders
-- **Docker Ready**: Production-ready containerization with Qdrant included
-- **Structured Logging**: JSON-formatted logs for production use
+- **RAG Pipeline**: Upload and query financial documents, circulars, notifications
+- **Document Analysis**: Balance sheets, P&L statements, audit reports
+- **Qdrant Vector Database**: Fast semantic search across uploaded documents
+- **Professional Tone**: Formal, precise responses with proper citations
+- **Docker Ready**: Production-ready containerization
 
 ## Quick Start
 
