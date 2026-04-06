@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 from functools import lru_cache
 from typing import Any, Optional
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AsyncAzureOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from app.core.config import settings
+from app.core.config import LLMProvider, settings
 from app.core.exceptions import ConfigurationError, EmbeddingError
 from app.core.logging import get_logger
 
@@ -120,28 +120,128 @@ class OpenAIEmbeddings(BaseEmbeddings):
             raise EmbeddingError(f"Failed to generate embeddings: {e}", original_error=e)
 
 
+class AzureOpenAIEmbeddings(BaseEmbeddings):
+    """Azure OpenAI embeddings implementation."""
+
+    def __init__(
+        self,
+        azure_endpoint: str,
+        api_key: str,
+        deployment: str,
+        api_version: str = "2024-12-01-preview",
+        dimension: int = 1536,
+        **kwargs: Any,
+    ) -> None:
+        self.deployment = deployment
+        self._dimension = dimension
+        self.client = AsyncAzureOpenAI(
+            azure_endpoint=azure_endpoint,
+            api_key=api_key,
+            api_version=api_version,
+        )
+        logger.info("Azure OpenAI Embeddings initialized", deployment=deployment)
+
+    @property
+    def dimension(self) -> int:
+        return self._dimension
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=30),
+        reraise=True,
+    )
+    async def embed_text(self, text: str) -> list[float]:
+        """Generate embedding using Azure OpenAI."""
+        try:
+            response = await self.client.embeddings.create(
+                model=self.deployment,
+                input=text,
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            raise EmbeddingError(f"Azure embedding failed: {e}", original_error=e)
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=30),
+        reraise=True,
+    )
+    async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        """Generate embeddings for multiple texts using Azure OpenAI."""
+        if not texts:
+            return []
+
+        try:
+            batch_size = 100
+            all_embeddings: list[list[float]] = []
+
+            for i in range(0, len(texts), batch_size):
+                batch = texts[i:i + batch_size]
+                response = await self.client.embeddings.create(
+                    model=self.deployment,
+                    input=batch,
+                )
+                batch_embeddings = [item.embedding for item in response.data]
+                all_embeddings.extend(batch_embeddings)
+
+            logger.debug("Generated Azure embeddings", count=len(texts))
+            return all_embeddings
+
+        except Exception as e:
+            raise EmbeddingError(f"Azure embeddings failed: {e}", original_error=e)
+
+
 def create_embeddings(**kwargs) -> BaseEmbeddings:
     """
-    Create an OpenAI embeddings instance.
+    Create an embeddings instance based on LLM provider.
+
+    Uses Azure OpenAI if LLM_PROVIDER is azure_openai, otherwise uses OpenAI.
 
     Args:
         **kwargs: Additional arguments
 
     Returns:
-        An OpenAI embeddings instance
+        An embeddings instance
     """
-    api_key = kwargs.pop("api_key", None) or settings.openai_api_key
-    if not api_key:
-        raise ConfigurationError(
-            "OpenAI API key required for embeddings",
-            details={"provider": "openai"},
-        )
+    provider = settings.llm_provider
 
-    return OpenAIEmbeddings(
-        api_key=api_key,
-        model=kwargs.pop("model", None) or settings.embedding_model,
-        **kwargs,
-    )
+    if provider == LLMProvider.AZURE_OPENAI:
+        endpoint = kwargs.pop("azure_endpoint", None) or settings.azure_openai_endpoint
+        api_key = kwargs.pop("api_key", None) or settings.azure_openai_api_key
+        deployment = kwargs.pop("deployment", None) or settings.azure_openai_embedding_deployment
+
+        if not endpoint or not api_key:
+            raise ConfigurationError(
+                "Azure OpenAI endpoint and API key required for embeddings",
+                details={"provider": "azure_openai"},
+            )
+        if not deployment:
+            raise ConfigurationError(
+                "Azure OpenAI embedding deployment not configured",
+                details={"config_key": "AZURE_OPENAI_EMBEDDING_DEPLOYMENT"},
+            )
+
+        return AzureOpenAIEmbeddings(
+            azure_endpoint=endpoint,
+            api_key=api_key,
+            deployment=deployment,
+            api_version=kwargs.pop("api_version", None) or settings.azure_openai_api_version,
+            **kwargs,
+        )
+    else:
+        # Default to OpenAI
+        api_key = kwargs.pop("api_key", None) or settings.openai_api_key
+        if not api_key:
+            raise ConfigurationError(
+                "OpenAI API key required for embeddings",
+                details={"provider": "openai"},
+            )
+
+        return OpenAIEmbeddings(
+            api_key=api_key,
+            model=kwargs.pop("model", None) or settings.embedding_model,
+            **kwargs,
+        )
 
 
 @lru_cache

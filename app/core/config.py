@@ -23,6 +23,7 @@ class Environment(str, Enum):
 class LLMProvider(str, Enum):
     """Supported LLM providers."""
     OPENAI = "openai"
+    AZURE_OPENAI = "azure_openai"
     ANTHROPIC = "anthropic"
 
 
@@ -63,12 +64,19 @@ class Settings(BaseSettings):
     openai_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     openai_max_tokens: int = Field(default=4096, ge=1)
     
+    # Azure OpenAI Configuration
+    azure_openai_endpoint: Optional[str] = Field(default=None, description="Azure OpenAI endpoint URL")
+    azure_openai_api_key: Optional[str] = Field(default=None, description="Azure OpenAI API key")
+    azure_openai_deployment: Optional[str] = Field(default=None, description="Azure OpenAI deployment name")
+    azure_openai_api_version: str = Field(default="2024-12-01-preview", description="Azure OpenAI API version")
+    azure_openai_embedding_deployment: Optional[str] = Field(default=None, description="Azure OpenAI embedding deployment")
+
     # Anthropic Configuration
     anthropic_api_key: Optional[str] = Field(default=None, description="Anthropic API key")
     anthropic_model: str = Field(default="claude-3-opus-20240229", description="Anthropic model")
     anthropic_temperature: float = Field(default=0.7, ge=0.0, le=1.0)
     anthropic_max_tokens: int = Field(default=4096, ge=1)
-    
+
     # Embedding Configuration
     embedding_model: str = Field(default="text-embedding-3-small", description="Embedding model")
     

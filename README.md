@@ -11,7 +11,7 @@ An AI-powered Chartered Accountant assistant specialized in Indian accounting, t
 
 ## Features
 
-- **Multi-LLM Support**: OpenAI (GPT-4) and Anthropic (Claude)
+- **Multi-LLM Support**: Azure OpenAI, OpenAI (GPT-4), and Anthropic (Claude)
 - **RAG Pipeline**: Upload and query financial documents, circulars, notifications
 - **Document Analysis**: Balance sheets, P&L statements, audit reports
 - **Qdrant Vector Database**: Fast semantic search across uploaded documents
@@ -245,7 +245,7 @@ tool_registry.register(MyCustomTool())
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `LLM_PROVIDER` | LLM provider (openai, anthropic) | openai |
+| `LLM_PROVIDER` | LLM provider (azure_openai, openai, anthropic) | azure_openai |
 | `OPENAI_API_KEY` | OpenAI API key | - |
 | `OPENAI_MODEL` | OpenAI model name | gpt-4-turbo-preview |
 | `ANTHROPIC_API_KEY` | Anthropic API key | - |

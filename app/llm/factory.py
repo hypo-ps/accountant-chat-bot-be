@@ -3,6 +3,7 @@ LLM Factory for creating LLM instances based on configuration.
 
 Supports:
 - OpenAI (GPT-4, GPT-3.5)
+- Azure OpenAI
 - Anthropic (Claude)
 """
 
@@ -15,6 +16,7 @@ from app.core.logging import get_logger
 from app.llm.base import BaseLLM
 from app.llm.anthropic_llm import AnthropicLLM
 from app.llm.openai_llm import OpenAILLM
+from app.llm.azure_openai_llm import AzureOpenAILLM
 
 logger = get_logger(__name__)
 
@@ -56,6 +58,37 @@ def create_llm(
             **kwargs,
         )
     
+    elif provider == LLMProvider.AZURE_OPENAI:
+        endpoint = kwargs.pop("azure_endpoint", None) or settings.azure_openai_endpoint
+        api_key = kwargs.pop("api_key", None) or settings.azure_openai_api_key
+        deployment = kwargs.pop("deployment", None) or settings.azure_openai_deployment
+
+        if not endpoint:
+            raise ConfigurationError(
+                "Azure OpenAI endpoint not configured",
+                details={"provider": "azure_openai", "config_key": "AZURE_OPENAI_ENDPOINT"},
+            )
+        if not api_key:
+            raise ConfigurationError(
+                "Azure OpenAI API key not configured",
+                details={"provider": "azure_openai", "config_key": "AZURE_OPENAI_API_KEY"},
+            )
+        if not deployment:
+            raise ConfigurationError(
+                "Azure OpenAI deployment not configured",
+                details={"provider": "azure_openai", "config_key": "AZURE_OPENAI_DEPLOYMENT"},
+            )
+
+        return AzureOpenAILLM(
+            azure_endpoint=endpoint,
+            api_key=api_key,
+            deployment=deployment,
+            api_version=kwargs.pop("api_version", None) or settings.azure_openai_api_version,
+            temperature=kwargs.pop("temperature", None) or settings.openai_temperature,
+            max_tokens=kwargs.pop("max_tokens", None) or settings.openai_max_tokens,
+            **kwargs,
+        )
+
     elif provider == LLMProvider.ANTHROPIC:
         api_key = kwargs.pop("api_key", None) or settings.anthropic_api_key
         if not api_key:

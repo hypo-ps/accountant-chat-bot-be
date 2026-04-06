@@ -3,6 +3,7 @@
 from app.llm.base import BaseLLM, LLMResponse, Message, MessageRole
 from app.llm.factory import create_llm, get_llm
 from app.llm.openai_llm import OpenAILLM
+from app.llm.azure_openai_llm import AzureOpenAILLM
 from app.llm.anthropic_llm import AnthropicLLM
 
 __all__ = [
@@ -11,6 +12,7 @@ __all__ = [
     "Message",
     "MessageRole",
     "OpenAILLM",
+    "AzureOpenAILLM",
     "AnthropicLLM",
     "create_llm",
     "get_llm",
